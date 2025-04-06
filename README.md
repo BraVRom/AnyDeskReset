@@ -20,7 +20,7 @@ Occasionally, AnyDesk may incorrectly detect commercial use and trigger a 100-se
 ## How to Use
 
 1. **Download the script:**
-   - Download the `anydesk-reset.bat` file or create your own `.bat` file and paste the provided script.
+   - Download the `AnyDeskReset.bat` file or create your own `.bat` file and paste the provided script.
 
 2. **Run the script:**
    - Right-click the `.bat` file and select **Run as administrator**.
