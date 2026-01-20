@@ -1,94 +1,110 @@
 @echo off
 setlocal enabledelayedexpansion
 chcp 65001 >nul
-cls
+title AnyDesk Reset Tool
 
 echo ==========================================
-echo         AnyDesk Reset Utility
+echo           AnyDesk Reset Utility
 echo ==========================================
-echo By Br4hx
+echo By Br4hx (Jan 2026 Version)
 echo.
 
+:: --- ADMIN CHECK ---
 NET SESSION >nul 2>&1
 if %errorlevel% NEQ 0 (
-    echo ERROR: This script requires administrator privileges.
-    echo Please right-click and choose "Run as administrator".
+    echo ERROR: Debes ejecutar como Administrador.
     pause
     goto :eof
 )
 
-if not exist "%ProgramFiles%\AnyDesk\AnyDesk.exe" if not exist "%ProgramFiles(x86)%\AnyDesk\AnyDesk.exe" (
-    echo WARNING: AnyDesk executable not found in standard paths.
-    echo Continuing anyway...
-)
+:: --- STOP ANYDESK ---
+echo [1/6] Deteniendo procesos de AnyDesk...
+net stop AnyDeskService >nul 2>&1
+taskkill /F /IM AnyDesk.exe >nul 2>&1
+timeout /t 2 /nobreak >nul
 
-echo Closing AnyDesk if running...
-taskkill /F /IM AnyDesk.exe >nul 2>&1 && (
-    echo AnyDesk closed successfully.
-) || (
-    echo AnyDesk was not running.
-)
-
-tasklist | find /i "AnyDesk.exe" >nul
-if %errorlevel% EQU 0 (
-    echo ERROR: AnyDesk is still running. Please close it manually.
-    pause
-    goto :eof
-)
-
-set "sourceRoaming=%USERPROFILE%\AppData\Roaming\AnyDesk"
-set "sourceProgramData=C:\ProgramData\AnyDesk"
-
+:: --- PATHS ---
+set "roaming=%APPDATA%\AnyDesk"
+set "programData=C:\ProgramData\AnyDesk"
 set "timestamp=%date:~6,4%-%date:~3,2%-%date:~0,2%_%time:~0,2%-%time:~3,2%"
 set "timestamp=%timestamp: =0%"
-set "destinationRoaming=%sourceRoaming%\backup_%timestamp%"
-set "destinationProgramData=%sourceProgramData%\backup_%timestamp%"
+set "backupRoot=%TEMP%\AnyDeskBackup_%timestamp%"
+set "backupRoaming=%backupRoot%\Roaming"
+set "backupProgramData=%backupRoot%\ProgramData"
 
-if not exist "%destinationRoaming%" mkdir "%destinationRoaming%"
-if not exist "%destinationProgramData%" mkdir "%destinationProgramData%"
+mkdir "%backupRoaming%" >nul 2>&1
+mkdir "%backupProgramData%" >nul 2>&1
 
+:: --- BACKUP & CLEAN ---
+echo [2/6] Eliminando ID antigua y creando backup...
 set /a movedFiles=0
-set "logFile=%TEMP%\AnyDeskReset_%timestamp%.log"
-echo [%date% %time%] AnyDesk reset started. > "%logFile%"
 
-call :moveFile "%sourceRoaming%\service.conf" "%destinationRoaming%"
-call :moveFile "%sourceRoaming%\system.conf" "%destinationRoaming%"
-call :moveFile "%sourceProgramData%\service.conf" "%destinationProgramData%"
-call :moveFile "%sourceProgramData%\system.conf" "%destinationProgramData%"
-
-echo.
-if !movedFiles! EQU 0 (
-    echo No files were moved.
-) else if !movedFiles! EQU 1 (
-    echo 1 file was moved.
-) else (
-    echo !movedFiles! files were moved.
-)
-
-echo.
-echo ==========================================
-echo AnyDesk reset completed successfully.
-echo ------------------------------------------
-echo Backups stored in:
-echo   %destinationRoaming%
-echo   %destinationProgramData%
-echo ------------------------------------------
-echo Log file:
-echo   %logFile%
-echo ==========================================
-echo.
-echo Press any key to exit...
-pause >nul
-goto :eof
-
-:moveFile
-if exist "%~1" (
-    move "%~1" "%~2" >nul
-    echo File moved: %~1
-    echo [OK] %~1 >> "%logFile%"
+if exist "%roaming%\system.conf" (
+    move /Y "%roaming%\system.conf" "%backupRoaming%\" >nul
     set /a movedFiles+=1
-) else (
-    echo File not found: %~1
-    echo [MISSING] %~1 >> "%logFile%"
 )
-goto :eof
+if exist "%programData%\system.conf" (
+    move /Y "%programData%\system.conf" "%backupProgramData%\" >nul
+    set /a movedFiles+=1
+)
+
+:: Limpiar rastros
+del /f /q "%roaming%\*.trace" >nul 2>&1
+del /f /q "%programData%\*.trace" >nul 2>&1
+
+:: --- REGENERATE ---
+echo [3/6] Iniciando AnyDesk para generar nueva ID...
+set "AnyDeskPath="
+if exist "%ProgramFiles%\AnyDesk\AnyDesk.exe" set "AnyDeskPath=%ProgramFiles%\AnyDesk\AnyDesk.exe"
+if exist "%ProgramFiles(x86)%\AnyDesk\AnyDesk.exe" set "AnyDeskPath=%ProgramFiles(x86)%\AnyDesk\AnyDesk.exe"
+
+if not defined AnyDeskPath (
+    echo ERROR: No se encontró AnyDesk instalado.
+    pause
+    goto :eof
+)
+
+start "" "%AnyDeskPath%"
+
+:: --- WAIT LOOP (FIXED) ---
+echo [4/6] Esperando inicialización...
+for /f %%a in ('copy /Z "%~dpf0" nul') do set "CR=%%a"
+set /a tries=0
+
+:waitLoop
+set /a tries+=1
+set /a pct=tries*5
+
+:: Mostrar progreso en la misma línea sin usar CLS
+<nul set /p "=Progreso: [!pct!%%] Verificando archivos...!CR!"
+
+:: Pequeña pausa para dar tiempo al sistema
+timeout /t 1 >nul
+
+:: Verificamos si AnyDesk ya creó el nuevo archivo de configuración
+if exist "%programData%\system.conf" goto nextStep
+if exist "%roaming%\system.conf" goto nextStep
+
+if !tries! GEQ 20 (
+    echo.
+    echo [!] Tiempo de espera agotado. Continuando...
+    goto nextStep
+)
+goto waitLoop
+
+:nextStep
+echo.
+echo [5/6] ID Generada. Cerrando AnyDesk...
+timeout /t 2 /nobreak >nul
+taskkill /F /IM AnyDesk.exe >nul 2>&1
+
+:: --- RESTORE USER DATA ---
+echo [6/6] Restaurando configuraciones de usuario...
+if exist "%backupRoaming%\user.conf" copy /Y "%backupRoaming%\user.conf" "%roaming%\" >nul
+
+echo.
+echo ==========================================
+echo Proceso completado exitosamente.
+echo Backup en: %backupRoot%
+echo ==========================================
+pause
