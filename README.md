@@ -1,50 +1,56 @@
-# AnyDeskReset Script - By Br4hx
+# AnyDeskReset Script - By Br4hx (January 2026 updated)
 
-This batch script helps reset AnyDesk by moving its configuration files to timestamped backup folders, ensuring AnyDesk is closed before proceeding. It solves the "100-second countdown" issue by clearing AnyDesk’s usage history and configuration files, while keeping a log of all operations.
+This advanced batch utility automates the process of resetting the AnyDesk ID while preserving essential user data like favorites and thumbnails. It is specifically designed to bypass the "commercial use" detection and the 100-second connection delay by performing a clean configuration wipe followed by a forced ID regeneration.
 
-## Purpose
+## Key Improvements in v2.0
 
-Occasionally, AnyDesk may incorrectly detect commercial use and trigger a 100-second countdown delay when attempting to connect. This script helps bypass that issue by resetting AnyDesk’s configuration files, moving them to unique timestamped backup folders, and potentially removing the delay caused by AnyDesk's incorrect commercial usage detection.
+* **Flicker-Free Progress Bar:** Replaced the `cls` loop with a Carriage Return (`CR`) based progress tracker for a smoother UI. No more flickering console!
+* **Smart ID Regeneration:** The script doesn't just delete files; it launches AnyDesk, waits for the system to generate a new unique ID, and then closes it safely to commit changes.
+* **Data Preservation:** Automatically backs up and restores `user.conf` (Favorites) and the `thumbnails` folder, so you don't lose your remote contacts.
+* **File-Lock Protection:** Includes a 2-second buffer and service-stop commands to prevent "Access Denied" errors when Windows locks configuration files.
+* **Security Verification:** Checks if files were actually moved before proceeding, preventing false-positive success messages.
 
-## Features
+## 🛠 Features
 
-- Closes AnyDesk if it is running.
-- Moves AnyDesk configuration files (`service.conf` and `system.conf`) to **timestamped backup folders** to avoid overwriting previous backups.
-- Logs every operation in a file located at `%TEMP%\AnyDeskReset_<timestamp>.log`.
-- Ensures the script waits for the user to see the results before closing.
-- Prevents data loss by moving files instead of deleting them.
+* **Automated Service Management:** Stops `AnyDeskService` and kills active processes.
+* **Timestamped Backups:** All old configurations are moved to `%TEMP%\AnyDeskBackup_[Timestamp]`—nothing is permanently deleted.
+* **Trace Cleaning:** Wipes `.trace` files to remove usage history logs.
+* **Admin Validation:** Built-in check to ensure the script has the necessary permissions to modify `ProgramData`.
 
 ## Requirements
 
-- Windows OS
-- Administrator privileges to run the script
+* **Windows OS** (10 or 11).
+* **Administrator Privileges** (Right-click > Run as Administrator).
+* **AnyDesk Installed** in default paths (`Program Files` or `Program Files (x86)`).
 
 ## How to Use
 
-1. **Download the script:**
-   - Download the `AnyDeskReset.bat` file or create your own `.bat` file and paste the provided script.
+1.  **Download:** Get the `AnyDeskReset.bat` file.
+2.  **Run:** Right-click the file and select **Run as administrator**.
+3.  **Wait:** The script will:
+    * Close AnyDesk.
+    * Backup your current ID.
+    * Launch AnyDesk briefly to generate a new ID (you will see a progress **%** in the console).
+    * Close AnyDesk and restore your favorites.
+4.  **Done:** Launch AnyDesk normally; you will have a brand new ID and no connection delays.
 
-2. **Run the script:**
-   - Right-click the `.bat` file and select **Run as administrator**.
-   - The script will automatically check if AnyDesk is running, close it if necessary, and move configuration files to timestamped backup folders.
+## Technical Details
 
-3. **View results:**
-   - The script will display the number of files moved, the location of the backup folders, and the log file path in the terminal.
-   - Press any key to exit the script once done.
+The script targets the following critical paths:
+* **Roaming:** `%APPDATA%\AnyDesk` (Local configuration and user data).
+* **ProgramData:** `C:\ProgramData\AnyDesk` (System-wide service configuration).
 
-## What the Script Does
+### Files Handled
 
-- **Closes AnyDesk:** Ensures AnyDesk is not running before making changes.
-- **Moves Configuration Files:** Moves `service.conf` and `system.conf` from the following locations:
-   - `%USERPROFILE%\AppData\Roaming\AnyDesk`
-   - `C:\ProgramData\AnyDesk`
-- **Timestamped Backup Folders:** Creates unique backup folders for each reset with a timestamp (e.g., `backup_2025-10-28_10-12`) to prevent overwriting previous backups.
-- **Logging:** Records the status of each file operation in a log file in `%TEMP%`.
-- **Completion:** Displays a summary of moved files, backup folder locations, and log file path. The script waits for a keypress so the user can review results.
+| File/Folder | Action | Purpose |
+| :--- | :--- | :--- |
+| `system.conf` / `service.conf` | **Reset** | Removes the old ID and license trace. |
+| `user.conf` | **Restore** | Keeps your "Favorites" list intact. |
+| `thumbnails/` | **Restore** | Keeps the preview images of your remote desktops. |
+| `*.trace` | **Delete** | Clears the connection log history. |
 
-## Important Notes
+## ⚠️ Important Notes
 
-- **Non-Commercial Use:** This script is designed for non-commercial users. If you use AnyDesk for business or commercial purposes, consider purchasing a commercial license to comply with AnyDesk's terms of service.
-
-- **File Recovery:** Files are moved, not deleted. You can manually restore them from the backup folder if needed.  
-- **Multiple Resets:** Each reset creates a new timestamped backup folder, so multiple resets won’t overwrite previous backups.
+* **Non-Commercial Use:** This tool is intended for personal use. If you use AnyDesk for professional purposes, please support the developers by purchasing a formal license.
+* **Safe Recovery:** Since the script moves files to the `%TEMP%` folder instead of deleting them, you can always undo the process by manually moving the files back from the backup directory.
+* **Logging:** A full log of the operation is saved at the backup path for troubleshooting.
