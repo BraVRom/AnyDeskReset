@@ -1,56 +1,56 @@
-# AnyDeskReset Script - By Br4hx (January 2026 updated)
+# AnyDesk Reset Tool (Works Jan 2026)
 
-This advanced batch utility automates the process of resetting the AnyDesk ID while preserving essential user data like favorites and thumbnails. It is specifically designed to bypass the "commercial use" detection and the 100-second connection delay by performing a clean configuration wipe followed by a forced ID regeneration.
+Esta utilidad avanzada en batch automatiza el proceso de reinicio de la ID de AnyDesk, diseñada específicamente para entornos donde se requiere una regeneración limpia sin perder la configuración personal crítica.
 
-## Key Improvements in v2.0
+A diferencia de otros scripts, esta versión corrige los fallos de lógica de versiones anteriores, asegurando que tus favoritos y miniaturas realmente se restauren.
 
-* **Flicker-Free Progress Bar:** Replaced the `cls` loop with a Carriage Return (`CR`) based progress tracker for a smoother UI. No more flickering console!
-* **Smart ID Regeneration:** The script doesn't just delete files; it launches AnyDesk, waits for the system to generate a new unique ID, and then closes it safely to commit changes.
-* **Data Preservation:** Automatically backs up and restores `user.conf` (Favorites) and the `thumbnails` folder, so you don't lose your remote contacts.
-* **File-Lock Protection:** Includes a 2-second buffer and service-stop commands to prevent "Access Denied" errors when Windows locks configuration files.
-* **Security Verification:** Checks if files were actually moved before proceeding, preventing false-positive success messages.
+## 🚀 Novedades en la v2
 
-## 🛠 Features
+* **Backup:** Se corrigió un error crítico donde `user.conf` y `thumbnails` no se copiaban a la carpeta temporal antes del borrado. Ahora la restauración funciona de verdad.
+* **Soporte `service.conf`:** Las versiones modernas de AnyDesk a veces guardan la ID en `service.conf` en lugar de `system.conf`. Este script ahora detecta y elimina ambos.
+* **Rutas Dinámicas:** Se eliminaron las rutas "hardcodeadas". Ahora utiliza variables de entorno (`%ProgramData%`) para mayor compatibilidad con cualquier instalación de Windows.
+* **Reinicio Inteligente:** Detención de procesos reforzada para evitar errores de "Acceso Denegado" cuando AnyDesk se resiste a cerrar.
 
-* **Automated Service Management:** Stops `AnyDeskService` and kills active processes.
-* **Timestamped Backups:** All old configurations are moved to `%TEMP%\AnyDeskBackup_[Timestamp]`—nothing is permanently deleted.
-* **Trace Cleaning:** Wipes `.trace` files to remove usage history logs.
-* **Admin Validation:** Built-in check to ensure the script has the necessary permissions to modify `ProgramData`.
+## Características Principales
 
-## Requirements
+* **Gestión Automática de Servicios:** Detiene `AnyDeskService` y mata los procesos activos de forma forzada pero segura.
+* **Backup Temporal:** Toda configuración antigua se mueve a `%TEMP%\AnyDeskBackup_[Timestamp]`. Nada se borra permanentemente; si algo sale mal, tus archivos siguen ahí.
+* **Limpieza de Rastros:** Elimina archivos `.trace` para purgar logs de conexiones antiguas.
+* **Barra de Progreso:** Interfaz limpia sin parpadeos (`flicker-free`) usando retorno de carro.
 
-* **Windows OS** (10 or 11).
-* **Administrator Privileges** (Right-click > Run as Administrator).
-* **AnyDesk Installed** in default paths (`Program Files` or `Program Files (x86)`).
+##  Requisitos
 
-## How to Use
+* **Windows 10 / 11**.
+* **Ejecutar como Administrador** (Click derecho > Ejecutar como administrador).
+* **AnyDesk Instalado** (Funciona tanto en instalaciones estándar como portables si están en rutas de sistema).
 
-1.  **Download:** Get the `AnyDeskReset.bat` file.
-2.  **Run:** Right-click the file and select **Run as administrator**.
-3.  **Wait:** The script will:
-    * Close AnyDesk.
-    * Backup your current ID.
-    * Launch AnyDesk briefly to generate a new ID (you will see a progress **%** in the console).
-    * Close AnyDesk and restore your favorites.
-4.  **Done:** Launch AnyDesk normally; you will have a brand new ID and no connection delays.
+##  Cómo Usar
 
-## Technical Details
+1.  **Descarga** el archivo `AnyDeskReset.bat`.
+2.  **Ejecuta** el archivo con **permisos de Administrador**.
+3.  **Espera** a que la magia ocurra:
+    * El script cerrará AnyDesk.
+    * Hará una copia de seguridad de tus Favoritos y Miniaturas.
+    * Lanzará AnyDesk brevemente para forzar la generación de una nueva ID.
+    * Cerrará AnyDesk nuevamente para restaurar tus datos.
+4.  **Listo:** Abre AnyDesk y disfruta de tu nueva ID.
 
-The script targets the following critical paths:
-* **Roaming:** `%APPDATA%\AnyDesk` (Local configuration and user data).
-* **ProgramData:** `C:\ProgramData\AnyDesk` (System-wide service configuration).
+## Detalles Técnicos
 
-### Files Handled
+El script actúa sobre las rutas críticas de datos (`%APPDATA%` y `%ProgramData%`).
 
-| File/Folder | Action | Purpose |
+### Tabla de Archivos Gestionados
+
+| Archivo / Carpeta | Acción | Propósito |
 | :--- | :--- | :--- |
-| `system.conf` / `service.conf` | **Reset** | Removes the old ID and license trace. |
-| `user.conf` | **Restore** | Keeps your "Favorites" list intact. |
-| `thumbnails/` | **Restore** | Keeps the preview images of your remote desktops. |
-| `*.trace` | **Delete** | Clears the connection log history. |
+| `system.conf` | **Reset** | Contiene la ID antigua en versiones clásicas. |
+| `service.conf` | **Reset** | **(Nuevo)** Contiene la ID en versiones modernas/services. |
+| `user.conf` | **Backup & Restore** | Mantiene tu lista de **Favoritos/Contactos**. |
+| `thumbnails/` | **Backup & Restore** | Mantiene las imágenes previas de tus conexiones. |
+| `*.trace` | **Delete** | Elimina el historial de logs y depuración. |
 
-## ⚠️ Important Notes
+## ⚠️ Notas Importantes
 
-* **Non-Commercial Use:** This tool is intended for personal use. If you use AnyDesk for professional purposes, please support the developers by purchasing a formal license.
-* **Safe Recovery:** Since the script moves files to the `%TEMP%` folder instead of deleting them, you can always undo the process by manually moving the files back from the backup directory.
-* **Logging:** A full log of the operation is saved at the backup path for troubleshooting.
+* **Uso Ético:** Esta herramienta está diseñada para mantenimiento y uso personal. Por favor, apoya a los desarrolladores de software comprando una licencia si lo usas con fines comerciales.
+* **Recuperación Manual:** El backup se guarda en la carpeta temporal del sistema (`%TEMP%`). Si por alguna razón necesitas recuperar tu ID anterior, busca la carpeta con la fecha más reciente allí.
+* **Seguridad:** El código es transparente y `open source`. Puedes (y debes) revisarlo haciendo click derecho > Editar para ver exactamente qué comandos se ejecutan.
